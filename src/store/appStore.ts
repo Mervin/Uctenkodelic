@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { SessionData, Person, ReceiptItem } from '../models/types';
-import { backendService } from '../services/mockBackend';
+import { backendService } from '../services/firebaseBackend';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AppState {
