@@ -38,8 +38,8 @@ const parseReceiptText = (text: string): ParsedItem[] => {
   const items: ParsedItem[] = [];
 
   // Regex to find a price at the end of a line.
-  // Matches e.g., "12.99", "12,99", "-12.99"
-  const priceRegex = /(-?\d+[.,]\d{2})\s*$/;
+  // Matches e.g., "12.99", "12,99", "-12.99", "59,40 B", "67,60 C", "97.20 Kč"
+  const priceRegex = /(-?\d+[.,]\d{2})(?:\s*[a-zA-ZčČ]+)?\s*$/;
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -50,13 +50,24 @@ const parseReceiptText = (text: string): ParsedItem[] => {
       const priceStr = match[1].replace(',', '.'); // standardize decimal
       const price = parseFloat(priceStr);
 
-      // Extract the name by removing the price from the end
+      // Extract the name by removing the price and suffix from the end
       const name = trimmed.replace(priceRegex, '').trim()
-        // Clean up common OCR noise like trailing dots, dashes, or letters right before price
-        .replace(/[\.\-\_ABC]+$/, '')
+        // Clean up common OCR noise like trailing dots, dashes, or colons right before price
+        .replace(/[\.\-\_\*\~:\s]+$/, '')
         .trim();
 
-      if (name.length > 2 && !isNaN(price)) {
+      const nameLower = name.toLowerCase();
+      const isSummaryOrTotal = 
+        nameLower.includes('cena po slev') ||
+        nameLower.includes('celkem') ||
+        nameLower.includes('úhradě') ||
+        nameLower.includes('uhrazeno') ||
+        nameLower.includes('hotovost') ||
+        nameLower.includes('karta') ||
+        nameLower.includes('vráceno') ||
+        nameLower.startsWith('z toho');
+
+      if (name.length > 2 && !isNaN(price) && !isSummaryOrTotal) {
         items.push({ name, price });
       }
     }
