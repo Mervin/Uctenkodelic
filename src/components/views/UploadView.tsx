@@ -19,13 +19,21 @@ export const UploadView: React.FC = () => {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          // For receipts, width is what matters for text resolution. 
-          // They can be very tall, so scaling by height ruins the text.
-          const maxWidth = 1200;
 
-          if (width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
+          // Bezpečnostní limity pro plátno (Canvas) na mobilních zařízeních (iOS má limit kolem 4096px).
+          // Příliš vysoké obrázky z aplikací (Lidl) musíme zmenšit na max výšku, jinak spadnou.
+          // Běžné fotky musíme omezit i plošně, aby base64 nezahlstil localStorage.
+          const MAX_HEIGHT = 4000;
+          const MAX_WIDTH = 2000;
+
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+          
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
           }
 
           canvas.width = width;
