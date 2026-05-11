@@ -84,7 +84,7 @@ export const ResultsView: React.FC = () => {
       </div>
 
       <div className="text-center text-sm text-gray-400 mt-4">
-        Pokud položku sdílí více lidí, její cena je rozdělena rovným dílem.
+        Každý platí poměrnou část položky podle zadaného počtu dílů/kusů.
       </div>
     </div>
   );
