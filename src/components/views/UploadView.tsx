@@ -145,7 +145,6 @@ export const UploadView: React.FC = () => {
       <input
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         ref={fileInputRef}
         onChange={handleFileChange}
