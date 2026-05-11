@@ -10,8 +10,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Rozdělení účtu',
-        short_name: 'Rozdělení',
+        name: 'Účtenkodělič',
+        short_name: 'Účtenkodělič',
         description: 'Aplikace pro sdílení a rozdělení účtenek.',
         theme_color: '#ffffff',
         icons: [
