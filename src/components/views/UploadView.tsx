@@ -10,32 +10,71 @@ export const UploadView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const max = 1500; // OCR needs decent resolution but not full 12MP
+
+          if (width > height) {
+            if (width > max) {
+              height = Math.round((height * max) / width);
+              width = max;
+            }
+          } else {
+            if (height > max) {
+              width = Math.round((width * max) / height);
+              height = max;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(e.target?.result as string);
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Convert to base64 for local mock storage
-    // Note: For real backend, we'd upload the file and get a URL.
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const base64Url = event.target?.result as string;
-      await updateImage(base64Url);
-
+    try {
       setIsProcessing(true);
       setError(null);
       setProgress(0);
 
+      // Compress image to avoid localStorage QuotaExceededError and speed up OCR
+      const base64Url = await compressImage(file);
+      
       try {
-        const parsedItems = await processImageOCR(base64Url, (p) => setProgress(p));
-        await addItems(parsedItems.map(item => ({ ...item, assignments: {} })));
-      } catch (err) {
-        setError('Nepodařilo se přečíst text. Zkuste to prosím znovu nebo vložte položky ručně.');
-        console.error(err);
-      } finally {
-        setIsProcessing(false);
+        await updateImage(base64Url);
+      } catch (storeErr) {
+        console.warn("Failed to store image in session, maybe too large", storeErr);
       }
-    };
-    reader.readAsDataURL(file);
+
+      const parsedItems = await processImageOCR(base64Url, (p) => setProgress(p));
+      await addItems(parsedItems.map(item => ({ ...item, assignments: {} })));
+    } catch (err) {
+      setError('Nepodařilo se přečíst text. Zkuste to prosím znovu nebo vložte položky ručně.');
+      console.error(err);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleSkip = () => {
