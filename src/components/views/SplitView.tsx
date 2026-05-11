@@ -109,7 +109,7 @@ export const SplitView: React.FC = () => {
                      </p>
                      <div className="flex justify-between items-center mt-2">
                        <p className="text-xs text-gray-500">
-                         {totalShares > 0 ? `Rozděleno: ${totalShares} ${item.quantity ? 'ks' : 'dílů'}` : 'Zatím nerozděleno'}
+                         {totalShares > 0 ? `Rozděleno: ${totalShares} ${item.quantity && totalShares <= item.quantity ? 'ks' : 'dílů'}` : 'Zatím nerozděleno'}
                        </p>
                        <div className={`font-semibold whitespace-nowrap ${activeShares > 0 ? 'text-blue-700' : 'text-gray-900'}`}>
                          {item.price.toFixed(2)} Kč
