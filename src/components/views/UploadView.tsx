@@ -85,6 +85,9 @@ export const UploadView: React.FC = () => {
 
       const parsedItems = await processImageOCR(base64Url, (p) => setProgress(p));
       await addItems(parsedItems.map(item => ({ ...item, assignments: {} })));
+      
+      // Automaticky přesunout uživatele na krok 2 po úspěšném nahrání a zpracování
+      window.dispatchEvent(new CustomEvent('navigate', { detail: 'edit' }));
     } catch (err) {
       setError('Nepodařilo se přečíst text. Zkuste to prosím znovu nebo vložte položky ručně.');
       console.error(err);

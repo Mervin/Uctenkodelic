@@ -2,7 +2,6 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import type { BackendService } from './backend';
 import type { SessionData } from '../models/types';
-import { v4 as uuidv4 } from 'uuid';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCOgZhq83Ab1PGZoiyvJa6Ykl_eWANzFfg",
