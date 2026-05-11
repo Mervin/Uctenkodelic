@@ -15,7 +15,20 @@ export class MockBackendService implements BackendService {
   }
 
   private save() {
-    localStorage.setItem('mockSessions', JSON.stringify(this.sessions));
+    try {
+      localStorage.setItem('mockSessions', JSON.stringify(this.sessions));
+    } catch (err) {
+      console.warn("LocalStorage Quota Exceeded, saving without images", err);
+      try {
+        const strippedSessions: Record<string, SessionData> = {};
+        for (const id in this.sessions) {
+          strippedSessions[id] = { ...this.sessions[id], imageUrl: null };
+        }
+        localStorage.setItem('mockSessions', JSON.stringify(strippedSessions));
+      } catch (fallbackErr) {
+        console.error("Failed to save even without images", fallbackErr);
+      }
+    }
   }
 
   private notify(id: string) {
