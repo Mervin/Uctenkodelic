@@ -19,18 +19,13 @@ export const UploadView: React.FC = () => {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          const max = 1500; // OCR needs decent resolution but not full 12MP
+          // For receipts, width is what matters for text resolution. 
+          // They can be very tall, so scaling by height ruins the text.
+          const maxWidth = 1200;
 
-          if (width > height) {
-            if (width > max) {
-              height = Math.round((height * max) / width);
-              width = max;
-            }
-          } else {
-            if (height > max) {
-              width = Math.round((width * max) / height);
-              height = max;
-            }
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
           }
 
           canvas.width = width;
