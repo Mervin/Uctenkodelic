@@ -22,15 +22,21 @@ export const MainLayout: React.FC = () => {
     }
   }, [sessionId]);
 
+  const session = useAppStore(state => state.session);
+
   React.useEffect(() => {
-    if (sessionId) {
+    if (sessionId && session) {
       if (currentStep === 'home') {
-        setCurrentStep('upload');
+        if (session.items && session.items.length > 0) {
+          setCurrentStep('split');
+        } else {
+          setCurrentStep('upload');
+        }
       }
-    } else {
+    } else if (!sessionId) {
       setCurrentStep('home');
     }
-  }, [sessionId, currentStep]);
+  }, [sessionId, session, currentStep]);
 
   // Bottom Navigation
   // Expose step setter to global context or listen to store if we want tight coupling.

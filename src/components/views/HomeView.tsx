@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/appStore';
 import { Upload, FileText } from 'lucide-react';
 
 export const HomeView: React.FC = () => {
-  const { createSession, joinSession, isLoading } = useAppStore();
+  const { createSession, joinSession, isLoading, error } = useAppStore();
   const [joinId, setJoinId] = useState('');
 
   const handleCreate = async () => {
@@ -27,6 +27,12 @@ export const HomeView: React.FC = () => {
       <p className="text-gray-500 mb-8 max-w-sm">
         Nahrajte účtenku, opravte položky a jednoduše se vyrovnejte s přáteli.
       </p>
+
+      {error && (
+        <div className="w-full max-w-sm bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm font-medium">
+          {error}
+        </div>
+      )}
 
       <button
         onClick={handleCreate}
@@ -53,10 +59,10 @@ export const HomeView: React.FC = () => {
         />
         <button
           type="submit"
-          disabled={!joinId.trim()}
+          disabled={!joinId.trim() || isLoading}
           className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-colors disabled:opacity-50"
         >
-          Připojit se
+          {isLoading ? 'Připojuji...' : 'Připojit se'}
         </button>
       </form>
     </div>

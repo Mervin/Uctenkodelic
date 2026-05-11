@@ -57,11 +57,16 @@ export class FirebaseBackendService implements BackendService {
     await updateDoc(doc(db, "sessions", id), safeUpdate);
   }
 
-  subscribeToSession(id: string, callback: (data: SessionData) => void): () => void {
+  subscribeToSession(id: string, callback: (data: SessionData) => void, onError?: (err: Error) => void): () => void {
     const unsubscribe = onSnapshot(doc(db, "sessions", id), (docSnap) => {
       if (docSnap.exists()) {
         callback(docSnap.data() as SessionData);
+      } else {
+        if (onError) onError(new Error("Účtenka s tímto ID neexistuje."));
       }
+    }, (error) => {
+      console.error("Firebase subscription error:", error);
+      if (onError) onError(error);
     });
     return unsubscribe;
   }

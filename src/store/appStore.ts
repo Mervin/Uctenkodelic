@@ -7,6 +7,7 @@ interface AppState {
   session: SessionData | null;
   sessionId: string | null;
   isLoading: boolean;
+  error: string | null;
 
   // Actions
   createSession: () => Promise<string>;
@@ -24,6 +25,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   session: null,
   sessionId: null,
   isLoading: false,
+  error: null,
 
   createSession: async () => {
     set({ isLoading: true });
@@ -40,9 +42,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   joinSession: (id: string) => {
-    set({ sessionId: id });
+    set({ sessionId: id, error: null, isLoading: true });
     backendService.subscribeToSession(id, (data) => {
-      set({ session: data });
+      set({ session: data, isLoading: false, error: null });
+    }, (err) => {
+      set({ error: err.message, isLoading: false, sessionId: null });
     });
   },
 
