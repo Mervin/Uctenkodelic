@@ -127,12 +127,22 @@ export const UploadView: React.FC = () => {
       {session?.imageUrl && session.imageUrl !== 'skipped' ? (
         <div className="w-full max-w-md flex flex-col items-center">
           <img src={session.imageUrl} alt="Účtenka" className="w-full max-h-[40vh] object-contain bg-gray-100 rounded-xl mb-6 shadow-sm" />
-          <button
-             onClick={() => fileInputRef.current?.click()}
-             className="text-blue-600 font-medium mb-8"
-          >
-            Nahrát jinou fotografii
-          </button>
+          <div className="flex flex-col gap-3 w-full mb-8">
+            <button
+               onClick={() => fileInputRef.current?.click()}
+               className="text-blue-600 font-medium bg-blue-50 py-3 rounded-xl transition-colors hover:bg-blue-100"
+            >
+              Vyfotit a přidat další část účtenky
+            </button>
+            <button
+               onClick={() => {
+                 window.location.href = window.location.pathname;
+               }}
+               className="text-gray-500 font-medium py-2 text-sm hover:text-gray-700"
+            >
+              Zahodit a začít úplně novou
+            </button>
+          </div>
         </div>
       ) : (
         <div
