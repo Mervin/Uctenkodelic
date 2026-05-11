@@ -82,11 +82,17 @@ const parseReceiptText = (text: string): ParsedItem[] => {
       const isSummaryOrTotal = 
         nameLower.includes('cena po slev') ||
         nameLower.includes('celkem') ||
+        nameLower.includes('celková') ||
+        nameLower.includes('celkový') ||
+        nameLower.includes('platbě') ||
         nameLower.includes('úhradě') ||
         nameLower.includes('uhrazeno') ||
         nameLower.includes('hotovost') ||
         nameLower.includes('karta') ||
         nameLower.includes('vráceno') ||
+        nameLower.includes('prodej') ||
+        nameLower.includes('dph') ||
+        nameLower.includes('zaplacen') ||
         nameLower.startsWith('z toho');
 
       if (name.length > 2 && !isNaN(price) && !isSummaryOrTotal) {
