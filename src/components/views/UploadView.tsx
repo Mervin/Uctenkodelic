@@ -61,8 +61,21 @@ export const UploadView: React.FC = () => {
       setError(null);
       setProgress(0);
 
-      // Compress image to avoid localStorage QuotaExceededError and speed up OCR
-      const base64Url = await compressImage(file);
+      let base64Url: string;
+      
+      // Běžná fotka z foťáku mobilu má 5-10 MB, což by shodilo localStorage (limit 5MB) a zaseklo OCR.
+      // Digitální účtenky (Lidl) mají často kolem 1MB, jsou extrémně vysoké a nepotřebují (ani nesmí) 
+      // jít přes zmenšování (Canvas), jinak na starších mobilech narazí na limity výšky plátna.
+      if (file.size > 3 * 1024 * 1024) { // Nad 3 MB zmenšíme
+        base64Url = await compressImage(file);
+      } else { // Pod 3 MB rovnou načteme původní (to je to, co fungovalo v původní verzi!)
+        base64Url = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => resolve(event.target?.result as string);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
+        });
+      }
       
       try {
         await updateImage(base64Url);
