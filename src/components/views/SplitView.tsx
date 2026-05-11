@@ -57,8 +57,17 @@ export const SplitView: React.FC = () => {
           >
             <span className="font-medium">{person.name}</span>
             {activePersonId === person.id && (
-               <button onClick={(e) => { e.stopPropagation(); removePerson(person.id); }} className="p-0.5 hover:bg-blue-700 rounded-full">
-                 <UserMinus size={14} />
+               <button 
+                 onClick={(e) => { 
+                   e.stopPropagation(); 
+                   if (window.confirm(`Opravdu chcete odebrat osobu ${person.name}? Vymažou se tím i všechny její přiřazené platby.`)) {
+                     removePerson(person.id); 
+                   }
+                 }} 
+                 className="p-1 hover:bg-blue-700 rounded-full ml-1 transition-colors"
+                 title="Odebrat osobu"
+               >
+                 <UserMinus size={16} />
                </button>
             )}
           </div>
