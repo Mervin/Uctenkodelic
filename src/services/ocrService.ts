@@ -72,9 +72,15 @@ const parseReceiptText = (text: string): ParsedItem[] => {
       const nameLower = name.toLowerCase();
 
       // Check for discount line to merge into previous item
-      if (price < 0 && (nameLower.includes('sleva') || nameLower.includes('zdarma') || nameLower.includes('akce') || nameLower.includes('odpočet'))) {
+      const isDiscountKeyword = nameLower.includes('sleva') || nameLower.includes('zdarma') || nameLower.includes('akce') || nameLower.includes('odpočet');
+      const isTotalDiscount = nameLower.includes('celková') || nameLower.includes('celkový');
+
+      // If price is negative, OR it has a discount keyword (and isn't a summary discount)
+      if ((price < 0 || isDiscountKeyword) && !isTotalDiscount) {
+        const discountAmount = Math.abs(price);
         if (items.length > 0) {
-          items[items.length - 1].price += price;
+          // Subtract the discount from the previous item
+          items[items.length - 1].price -= discountAmount;
         }
         continue;
       }
