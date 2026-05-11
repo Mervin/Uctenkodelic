@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/appStore';
 import { UserPlus, UserMinus, Share2, Check, Plus, Minus } from 'lucide-react';
 
 export const SplitView: React.FC = () => {
-  const { session, sessionId, addPerson, removePerson, setItemAssignment } = useAppStore();
+  const { session, sessionId, addPerson, removePerson, setItemAssignment, updateItem } = useAppStore();
   const [newPersonName, setNewPersonName] = useState('');
   const [activePersonId, setActivePersonId] = useState<string | null>(session?.people[0]?.id || null);
   const [copied, setCopied] = useState(false);
@@ -108,9 +108,28 @@ export const SplitView: React.FC = () => {
                        {item.name}
                      </p>
                      <div className="flex justify-between items-center mt-2">
-                       <p className="text-xs text-gray-500">
-                         {totalShares > 0 ? `Rozděleno: ${totalShares} ${item.quantity && totalShares <= item.quantity ? 'ks' : 'dílů'}` : 'Zatím nerozděleno'}
-                       </p>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const q = prompt('Zadejte celkový počet kusů/dílů (nechte prázdné pro automatické dělení):', String(item.quantity || ''));
+                            if (q !== null) {
+                              const parsed = parseInt(q, 10);
+                              if (!isNaN(parsed) && parsed > 0) {
+                                updateItem(item.id, { quantity: parsed });
+                              } else if (q.trim() === '') {
+                                const newItem = { ...item };
+                                delete newItem.quantity;
+                                updateItem(item.id, newItem);
+                              }
+                            }
+                          }}
+                          className="text-[11px] text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 px-2 py-1 rounded transition-colors flex items-center gap-1 -ml-2"
+                          title="Upravit celkový počet dílů"
+                        >
+                          {totalShares > 0 ? `Rozděleno: ${totalShares}` : 'Nerozděleno'}
+                          {item.quantity ? ` / ${item.quantity} ${totalShares <= item.quantity ? 'ks' : 'dílů'}` : (totalShares > 0 ? ' dílů' : '')}
+                          <span className="opacity-50 ml-0.5">✎</span>
+                        </button>
                        <div className={`font-semibold whitespace-nowrap ${activeShares > 0 ? 'text-blue-700' : 'text-gray-900'}`}>
                          {item.price.toFixed(2)} Kč
                        </div>
