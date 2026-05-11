@@ -19,7 +19,8 @@ const db = getFirestore(app);
 
 export class FirebaseBackendService implements BackendService {
   async createSession(initialData: Omit<SessionData, 'id' | 'createdAt'>): Promise<SessionData> {
-    const id = uuidv4();
+    // Generujeme krátké ID (např. 'A7K9M2') místo dlouhého UUID pro hezčí odkazy
+    const id = Math.random().toString(36).substring(2, 8).toUpperCase();
     const newSession: SessionData = {
       ...initialData,
       id,
