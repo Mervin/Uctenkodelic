@@ -8,7 +8,7 @@ export interface ReceiptItem {
   name: string;
   price: number;
   quantity?: number;
-  assignedPeopleIds: string[];
+  assignments: Record<string, number>;
 }
 
 export interface SessionData {

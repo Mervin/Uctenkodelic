@@ -12,19 +12,29 @@ export const ResultsView: React.FC = () => {
   session.people.forEach(p => totals[p.id] = 0);
 
   let unassignedTotal = 0;
-  const unassignedItems = [];
+  const unassignedItems: any[] = [];
 
   session.items.forEach(item => {
-    if (item.assignedPeopleIds.length === 0) {
+    const totalShares = Object.values(item.assignments).reduce((a, b) => a + b, 0);
+    const divisor = item.quantity && item.quantity > totalShares ? item.quantity : totalShares;
+
+    if (totalShares === 0) {
       unassignedTotal += item.price;
       unassignedItems.push(item);
     } else {
-      const splitPrice = item.price / item.assignedPeopleIds.length;
-      item.assignedPeopleIds.forEach(personId => {
+      Object.entries(item.assignments).forEach(([personId, shares]) => {
         if (totals[personId] !== undefined) {
-          totals[personId] += splitPrice;
+          totals[personId] += (shares / divisor) * item.price;
         }
       });
+
+      if (item.quantity && totalShares < item.quantity) {
+        const unassignedRatio = (item.quantity - totalShares) / item.quantity;
+        unassignedTotal += unassignedRatio * item.price;
+        if (!unassignedItems.includes(item)) {
+          unassignedItems.push(item);
+        }
+      }
     }
   });
 

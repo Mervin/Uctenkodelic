@@ -34,7 +34,7 @@ export const EditorView: React.FC = () => {
     const price = parseFloat(newPrice.replace(',', '.'));
     const quantity = newQuantity.trim() ? parseFloat(newQuantity.replace(',', '.')) : undefined;
     if (!isNaN(price) && newName.trim()) {
-      await addItems([{ name: newName.trim(), price, quantity, assignedPeopleIds: [] }]);
+      await addItems([{ name: newName.trim(), price, quantity, assignments: {} }]);
       setNewName('');
       setNewPrice('');
       setNewQuantity('');

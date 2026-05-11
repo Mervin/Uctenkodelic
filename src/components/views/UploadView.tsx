@@ -27,7 +27,7 @@ export const UploadView: React.FC = () => {
 
       try {
         const parsedItems = await processImageOCR(base64Url, (p) => setProgress(p));
-        await addItems(parsedItems.map(item => ({ ...item, assignedPeopleIds: [] })));
+        await addItems(parsedItems.map(item => ({ ...item, assignments: {} })));
       } catch (err) {
         setError('Nepodařilo se přečíst text. Zkuste to prosím znovu nebo vložte položky ručně.');
         console.error(err);

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/appStore';
-import { UserPlus, UserMinus, Share2, Check } from 'lucide-react';
+import { UserPlus, UserMinus, Share2, Check, Plus, Minus } from 'lucide-react';
 
 export const SplitView: React.FC = () => {
-  const { session, sessionId, addPerson, removePerson, toggleItemAssignment } = useAppStore();
+  const { session, sessionId, addPerson, removePerson, setItemAssignment } = useAppStore();
   const [newPersonName, setNewPersonName] = useState('');
   const [activePersonId, setActivePersonId] = useState<string | null>(session?.people[0]?.id || null);
   const [copied, setCopied] = useState(false);
@@ -90,37 +90,48 @@ export const SplitView: React.FC = () => {
            </h3>
            <div className="flex flex-col gap-2">
              {session.items.map(item => {
-               const isSelectedByActive = item.assignedPeopleIds.includes(activePersonId);
-               const sharedCount = item.assignedPeopleIds.length;
+               const activeShares = item.assignments[activePersonId] || 0;
+               const totalShares = Object.values(item.assignments).reduce((a, b) => a + b, 0);
 
                return (
                  <div
                    key={item.id}
-                   onClick={() => toggleItemAssignment(item.id, activePersonId)}
-                   className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
-                     isSelectedByActive
+                   className={`p-4 rounded-xl border transition-all flex items-center justify-between gap-3 ${
+                     activeShares > 0
                        ? 'bg-blue-50 border-blue-200 shadow-sm'
                        : 'bg-white border-gray-200 hover:border-gray-300'
                    }`}
                  >
-                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                     <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 border ${
-                       isSelectedByActive ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300'
-                     }`}>
-                       {isSelectedByActive && <Check size={16} />}
-                     </div>
-                     <div className="flex-1 min-w-0">
-                       <p className={`font-medium truncate ${isSelectedByActive ? 'text-blue-900' : 'text-gray-900'}`}>
-                         {item.quantity && <span className="text-sm font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded mr-2">{item.quantity}x</span>}
-                         {item.name}
+                   <div className="flex flex-col flex-1 min-w-0">
+                     <p className={`font-medium truncate ${activeShares > 0 ? 'text-blue-900' : 'text-gray-900'}`}>
+                       {item.quantity && <span className="text-sm font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded mr-2">{item.quantity}x</span>}
+                       {item.name}
+                     </p>
+                     <div className="flex justify-between items-center mt-2">
+                       <p className="text-xs text-gray-500">
+                         {totalShares > 0 ? `Rozděleno: ${totalShares} ${item.quantity ? 'ks' : 'dílů'}` : 'Zatím nerozděleno'}
                        </p>
-                       {sharedCount > 1 && (
-                         <p className="text-xs text-blue-600 mt-0.5">Sdíleno {sharedCount} lidmi ({(item.price/sharedCount).toFixed(2)} Kč)</p>
-                       )}
+                       <div className={`font-semibold whitespace-nowrap ${activeShares > 0 ? 'text-blue-700' : 'text-gray-900'}`}>
+                         {item.price.toFixed(2)} Kč
+                       </div>
                      </div>
                    </div>
-                   <div className={`font-semibold whitespace-nowrap ${isSelectedByActive ? 'text-blue-700' : 'text-gray-900'}`}>
-                     {item.price.toFixed(2)} Kč
+                   
+                   <div className="flex items-center gap-1 shrink-0 bg-white border border-gray-200 rounded-lg p-0.5">
+                     <button
+                       onClick={() => setItemAssignment(item.id, activePersonId, Math.max(0, activeShares - 1))}
+                       disabled={activeShares === 0}
+                       className="w-8 h-8 rounded flex items-center justify-center text-gray-500 hover:bg-gray-100 disabled:opacity-30 transition-colors"
+                     >
+                       <Minus size={18} />
+                     </button>
+                     <span className="w-6 text-center font-bold text-gray-900">{activeShares}</span>
+                     <button
+                       onClick={() => setItemAssignment(item.id, activePersonId, activeShares + 1)}
+                       className="w-8 h-8 rounded flex items-center justify-center text-blue-600 hover:bg-blue-50 transition-colors"
+                     >
+                       <Plus size={18} />
+                     </button>
                    </div>
                  </div>
                );

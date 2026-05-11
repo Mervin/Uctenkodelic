@@ -17,7 +17,7 @@ interface AppState {
   addItems: (items: Omit<ReceiptItem, 'id'>[]) => Promise<void>;
   updateItem: (id: string, update: Partial<ReceiptItem>) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
-  toggleItemAssignment: (itemId: string, personId: string) => Promise<void>;
+  setItemAssignment: (itemId: string, personId: string, shares: number) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -67,10 +67,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { sessionId, session } = get();
     if (sessionId && session) {
       // Remove person and unassign them from items
-      const updatedItems = session.items.map(item => ({
-        ...item,
-        assignedPeopleIds: item.assignedPeopleIds.filter(pid => pid !== id)
-      }));
+      const updatedItems = session.items.map(item => {
+        const newAssignments = { ...item.assignments };
+        delete newAssignments[id];
+        return { ...item, assignments: newAssignments };
+      });
       await backendService.updateSession(sessionId, {
         people: session.people.filter(p => p.id !== id),
         items: updatedItems
@@ -107,16 +108,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  toggleItemAssignment: async (itemId, personId) => {
+  setItemAssignment: async (itemId, personId, shares) => {
     const { sessionId, session } = get();
     if (sessionId && session) {
       const updatedItems = session.items.map(item => {
         if (item.id === itemId) {
-          const isAssigned = item.assignedPeopleIds.includes(personId);
-          const assignedPeopleIds = isAssigned
-            ? item.assignedPeopleIds.filter(id => id !== personId)
-            : [...item.assignedPeopleIds, personId];
-          return { ...item, assignedPeopleIds };
+          const newAssignments = { ...item.assignments };
+          if (shares <= 0) {
+            delete newAssignments[personId];
+          } else {
+            newAssignments[personId] = shares;
+          }
+          return { ...item, assignments: newAssignments };
         }
         return item;
       });
