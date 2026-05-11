@@ -110,7 +110,10 @@ export const SplitView: React.FC = () => {
                        {isSelectedByActive && <Check size={16} />}
                      </div>
                      <div className="flex-1 min-w-0">
-                       <p className={`font-medium truncate ${isSelectedByActive ? 'text-blue-900' : 'text-gray-900'}`}>{item.name}</p>
+                       <p className={`font-medium truncate ${isSelectedByActive ? 'text-blue-900' : 'text-gray-900'}`}>
+                         {item.quantity && <span className="text-sm font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded mr-2">{item.quantity}x</span>}
+                         {item.name}
+                       </p>
                        {sharedCount > 1 && (
                          <p className="text-xs text-blue-600 mt-0.5">Sdíleno {sharedCount} lidmi ({(item.price/sharedCount).toFixed(2)} Kč)</p>
                        )}

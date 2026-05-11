@@ -7,20 +7,24 @@ export const EditorView: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
+  const [editQuantity, setEditQuantity] = useState('');
 
   const [newName, setNewName] = useState('');
   const [newPrice, setNewPrice] = useState('');
+  const [newQuantity, setNewQuantity] = useState('');
 
   const handleEdit = (item: any) => {
     setEditingId(item.id);
     setEditName(item.name);
     setEditPrice(item.price.toString());
+    setEditQuantity(item.quantity?.toString() || '');
   };
 
   const handleSave = async (id: string) => {
     const price = parseFloat(editPrice.replace(',', '.'));
+    const quantity = editQuantity.trim() ? parseFloat(editQuantity.replace(',', '.')) : undefined;
     if (!isNaN(price) && editName.trim()) {
-      await updateItem(id, { name: editName.trim(), price });
+      await updateItem(id, { name: editName.trim(), price, quantity });
     }
     setEditingId(null);
   };
@@ -28,10 +32,12 @@ export const EditorView: React.FC = () => {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     const price = parseFloat(newPrice.replace(',', '.'));
+    const quantity = newQuantity.trim() ? parseFloat(newQuantity.replace(',', '.')) : undefined;
     if (!isNaN(price) && newName.trim()) {
-      await addItems([{ name: newName.trim(), price, assignedPeopleIds: [] }]);
+      await addItems([{ name: newName.trim(), price, quantity, assignedPeopleIds: [] }]);
       setNewName('');
       setNewPrice('');
+      setNewQuantity('');
     }
   };
 
@@ -50,6 +56,14 @@ export const EditorView: React.FC = () => {
             {editingId === item.id ? (
               <div className="flex-1 flex items-center gap-2">
                 <input
+                  value={editQuantity}
+                  onChange={e => setEditQuantity(e.target.value)}
+                  className="w-12 border-b border-gray-300 focus:border-blue-500 focus:outline-none py-1 text-center"
+                  placeholder="ks"
+                  type="number"
+                  step="any"
+                />
+                <input
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
                   className="flex-1 border-b border-gray-300 focus:border-blue-500 focus:outline-none py-1 min-w-0"
@@ -67,7 +81,8 @@ export const EditorView: React.FC = () => {
               </div>
             ) : (
               <>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 flex items-center gap-2">
+                  {item.quantity && <span className="text-xs font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{item.quantity}x</span>}
                   <p className="font-medium text-gray-900 truncate">{item.name}</p>
                 </div>
                 <div className="font-semibold text-gray-900 whitespace-nowrap">
@@ -89,6 +104,14 @@ export const EditorView: React.FC = () => {
       </div>
 
       <form onSubmit={handleAdd} className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex gap-2">
+        <input
+          value={newQuantity}
+          onChange={e => setNewQuantity(e.target.value)}
+          className="w-16 rounded-lg border border-gray-300 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+          placeholder="ks"
+          type="number"
+          step="any"
+        />
         <input
           value={newName}
           onChange={e => setNewName(e.target.value)}
