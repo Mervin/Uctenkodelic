@@ -1,16 +1,17 @@
-# Rozdělení Účtu
+# Účtenkodělič 🧾✂️
 
-Aplikace pro sdílení a rozdělení účtenek s přáteli. Aplikace funguje kompletně na straně klienta s využitím [Tesseract.js](https://tesseract.projectnaptha.com/) pro lokální čtení textu z účtenek.
+**👉 [Spustit aplikaci: mervin.github.io/Uctenkodelic](https://mervin.github.io/Uctenkodelic/) 👈**
 
-## Jak zapnout reálnou spolupráci (Multi-user)
+Moderní webová aplikace (PWA) pro rychlé a spravedlivé rozdělení společné útraty s přáteli. Už žádné složité počítání na kalkulačce po večeri v restauraci nebo nákupu na víkendovou chatu.
 
-Aplikace je momentálně nastavena na použití lokálního "Mock" backendu, což znamená, že si uživatelé musí podávat jeden telefon (nebo přenášet dlouhé URL s parametry), aby mohli všichni vybírat položky.
+## Hlavní funkce
+* **AI Čtení účtenky:** Vyfoťte papírovou účtenku nebo nahrajte screenshot (např. z aplikace Lidl Plus). Aplikace pomocí umělé inteligence (OCR) automaticky přečte názvy položek a jejich ceny. Očišťuje řádky od zbytečností jako DPH, slevy se automaticky odečítají.
+* **Proporcionální dělení:** Položku může zaplatit jeden člověk, nebo se o ni můžete rozdělit (např. někdo zaplatí 2 kusy a někdo 3, nebo se o pizzu rozdělíte v poměru 1/4 ku 3/4).
+* **Live sdílení s přáteli (Multi-user):** Vše běží v reálném čase. Vygenerujte si krátký 6místný kód relace (např. `A7K9M2`) nebo pošlete odkaz kamarádům. Všichni si mohou aplikaci otevřít na svém telefonu a současně zaklikávat své položky. Úpravy se propisují okamžitě všem.
+* **Funguje i offline:** Aplikaci si můžete nainstalovat na plochu telefonu (PWA) a používat ji i jako běžnou mobilní aplikaci.
 
-Aplikace je ale architektována tak, aby šla snadno napojit na [Firebase Realtime Database](https://firebase.google.com/) nebo [Supabase](https://supabase.com/) pro skutečnou live spolupráci, kde každý uživatel otevře aplikaci na svém telefonu a vidí změny v reálném čase.
-
-### Návod na propojení s Firebase:
-1. Vytvořte si účet na [Firebase](https://firebase.google.com/) a vytvořte nový projekt.
-2. V sekci "Build" vyberte "Realtime Database" a vytvořte novou databázi v testovacím režimu.
-3. Získejte své konfigurační údaje (API Key, Database URL atd.).
-4. Otevřete `src/services/mockBackend.ts` a nahraďte jej skutečnou implementací `BackendService` využívající Firebase SDK.
-5. Upravte `src/store/appStore.ts`, aby se importoval nový Firebase backend místo `mockBackend.ts`.
+## Technologie
+* React, TypeScript, TailwindCSS
+* Vite, Zustand (State management)
+* Tesseract.js (Lokální AI OCR v prohlížeči)
+* Firebase Firestore (Cloudová databáze pro real-time synchronizaci)
