@@ -43,6 +43,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
   const lines = text.split('\n');
   const items: ParsedItem[] = [];
   let ocrTotal: number | undefined = undefined;
+  let isItemParsingComplete = false;
 
   // Regex to find a price at the end of a line.
   // Matches e.g., "12.99", "12,99", "-12.99", "59,40 B", "67,60 C", "97.20 Kč"
@@ -148,9 +149,15 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
            // It's possible there are multiple (e.g., Celkem bez DPH vs Celkem), keep the maximum one
            if (price > 0) {
                ocrTotal = ocrTotal === undefined ? price : Math.max(ocrTotal, price);
+               isItemParsingComplete = true; // We've seen a total, stop parsing new items
            }
         }
         continue;
+      }
+
+      if (isItemParsingComplete) {
+        pendingName = '';
+        continue; // Skip processing any further items after the total is found
       }
 
       // Check for discount line to merge into previous item
@@ -192,6 +199,11 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
       }
     } else {
       const lowerTrimmed = trimmed.toLowerCase();
+      if (isItemParsingComplete) {
+         pendingName = '';
+         continue; // Skip processing any further text lines after the total is found
+      }
+
       const isJunkLine =
          lowerTrimmed.startsWith('< detail') ||
          lowerTrimmed.includes('položka cena') ||
