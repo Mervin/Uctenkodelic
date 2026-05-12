@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { processImageOCR } from '../../services/ocrService';
 import { ImagePlus, Loader2, ArrowRight } from 'lucide-react';
+import { convertPdfToImages } from '../../utils/pdfRenderer';
 
 export const UploadView: React.FC = () => {
   const { session, updateImage, addItems } = useAppStore();
@@ -63,18 +64,32 @@ export const UploadView: React.FC = () => {
 
       let base64Url: string;
       
-      // Běžná fotka z foťáku mobilu má 5-10 MB, což by shodilo localStorage (limit 5MB) a zaseklo OCR.
-      // Digitální účtenky (Lidl) mají často kolem 1MB, jsou extrémně vysoké a nepotřebují (ani nesmí) 
-      // jít přes zmenšování (Canvas), jinak na starších mobilech narazí na limity výšky plátna.
-      if (file.size > 3 * 1024 * 1024) { // Nad 3 MB zmenšíme
-        base64Url = await compressImage(file);
-      } else { // Pod 3 MB rovnou načteme původní (to je to, co fungovalo v původní verzi!)
-        base64Url = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (event) => resolve(event.target?.result as string);
-          reader.onerror = () => reject(new Error('Failed to read file'));
-          reader.readAsDataURL(file);
-        });
+      if (file.type === 'application/pdf') {
+        const objectUrl = URL.createObjectURL(file);
+        try {
+          const pdfImages = await convertPdfToImages(objectUrl);
+          if (pdfImages.length === 0) {
+            throw new Error("PDF contained no renderable pages.");
+          }
+          // Use the first page for OCR mapping
+          base64Url = pdfImages[0];
+        } finally {
+          URL.revokeObjectURL(objectUrl);
+        }
+      } else {
+        // Běžná fotka z foťáku mobilu má 5-10 MB, což by shodilo localStorage (limit 5MB) a zaseklo OCR.
+        // Digitální účtenky (Lidl) mají často kolem 1MB, jsou extrémně vysoké a nepotřebují (ani nesmí)
+        // jít přes zmenšování (Canvas), jinak na starších mobilech narazí na limity výšky plátna.
+        if (file.size > 3 * 1024 * 1024) { // Nad 3 MB zmenšíme
+          base64Url = await compressImage(file);
+        } else { // Pod 3 MB rovnou načteme původní (to je to, co fungovalo v původní verzi!)
+          base64Url = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => resolve(event.target?.result as string);
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsDataURL(file);
+          });
+        }
       }
       
       try {
@@ -157,7 +172,7 @@ export const UploadView: React.FC = () => {
 
       <input
         type="file"
-        accept="image/*"
+        accept="image/*,application/pdf"
         className="hidden"
         ref={fileInputRef}
         onChange={handleFileChange}
