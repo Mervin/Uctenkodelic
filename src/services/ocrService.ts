@@ -45,7 +45,7 @@ const parseReceiptText = (text: string): ParsedItem[] => {
 
   // Regex to find a quantity at the start of a line.
   // Matches e.g., "6 ks x", "0,550 kg x", "2 x", "2x", "0,190 kg *"
-  const quantityRegex = /^(\d+(?:[.,]\d+)?)\s*(?:ks|kg|g|l|ml)?\s*(?:x|\*)/i;
+  const quantityRegex = /^(\d+(?:[.,]\d+)?)\s*(ks|kg|g|l|ml)?\s*(?:x|\*)/i;
 
   let pendingName = '';
 
@@ -57,10 +57,18 @@ const parseReceiptText = (text: string): ParsedItem[] => {
     let qty: number | null = null;
     let namePart = trimmed;
 
+    let isWeightLine = false;
+
     if (qtyMatch) {
-      const qtyStr = qtyMatch[1].replace(',', '.');
-      qty = parseFloat(qtyStr);
-      namePart = namePart.replace(quantityRegex, '').trim();
+      const isWeight = qtyMatch[2] && ['kg', 'g', 'l', 'ml'].includes(qtyMatch[2].toLowerCase());
+
+      if (isWeight) {
+        isWeightLine = true;
+      } else {
+        const qtyStr = qtyMatch[1].replace(',', '.');
+        qty = parseFloat(qtyStr);
+        namePart = namePart.replace(quantityRegex, '').trim();
+      }
     }
 
     const match = namePart.match(priceRegex);
@@ -76,7 +84,9 @@ const parseReceiptText = (text: string): ParsedItem[] => {
 
       // If the line had quantity and total price (e.g., "2x 19.90 Kč 39.80 Kč A")
       // We should strip the unit price as well.
-      name = name.replace(/\d+[.,]\d{2}\s*(?:Kč|Kc|Eur|€|K\?)?(?:\s*\/\s*(?:kg|ks|g|l|ml))?/i, '').trim();
+      if (!isWeightLine) {
+         name = name.replace(/\d+[.,]\d{2}\s*(?:Kč|Kc|Eur|€|K\?)?(?:\s*\/\s*(?:kg|ks|g|l|ml))?/i, '').trim();
+      }
 
       // Clean up random slash / kg remnants
       name = name.replace(/\/\s*(?:kg|ks|g|l|ml)/i, '').trim();
@@ -91,6 +101,8 @@ const parseReceiptText = (text: string): ParsedItem[] => {
         pendingName = '';
       }
 
+      // If the line is a weight line, the raw string is already appended to the pendingName.
+      // We treat the item as quantity 1 since it's an indivisible package for splitting purposes.
       const nameLower = name.toLowerCase();
 
       // Check for discount line to merge into previous item
@@ -117,9 +129,15 @@ const parseReceiptText = (text: string): ParsedItem[] => {
         nameLower.includes('uhrazeno') ||
         nameLower.includes('hotovost') ||
         nameLower.includes('karta') ||
+        nameLower.includes('kartou') ||
         nameLower.includes('vráceno') ||
         nameLower.includes('prodej') ||
         nameLower.includes('dph') ||
+        nameLower.includes('daň') ||
+        nameLower.includes('brutto') ||
+        nameLower.includes('netto') ||
+        nameLower.includes('c=%') ||
+        nameLower.includes('f=%') ||
         nameLower.includes('zaplacen') ||
         nameLower.startsWith('z toho') ||
         nameLower === 'součet' ||
@@ -142,7 +160,7 @@ const parseReceiptText = (text: string): ParsedItem[] => {
           if (qty !== null) finalItem.quantity = qty;
           items.push(finalItem);
         }
-      } else if (qtyMatch && items.length > 0) {
+      } else if (qtyMatch && !isWeightLine && items.length > 0) {
         items[items.length - 1].quantity = qty as number;
       }
     } else {
@@ -168,7 +186,7 @@ const parseReceiptText = (text: string): ParsedItem[] => {
          /^[\d/\s:]+$/.test(lowerTrimmed); // dates and times
 
       if (!isJunkLine && trimmed.length > 2) {
-         if (qtyMatch) {
+         if (qtyMatch && !isWeightLine) {
             if (items.length > 0) {
                items[items.length - 1].quantity = qty as number;
             }
