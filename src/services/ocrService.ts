@@ -44,8 +44,8 @@ const parseReceiptText = (text: string): ParsedItem[] => {
   const priceRegex = /(-?\d+[.,]\d{2})(?:\s*[a-zA-ZčČ\s]+)?$/;
 
   // Regex to find a quantity at the start of a line.
-  // Matches e.g., "6 ks x", "0,550 kg x", "2 x", "2x"
-  const quantityRegex = /^(\d+(?:[.,]\d+)?)\s*(?:ks|kg|g|l|ml)?\s*x/i;
+  // Matches e.g., "6 ks x", "0,550 kg x", "2 x", "2x", "0,190 kg *"
+  const quantityRegex = /^(\d+(?:[.,]\d+)?)\s*(?:ks|kg|g|l|ml)?\s*(?:x|\*)/i;
 
   let pendingName = '';
 
@@ -71,7 +71,7 @@ const parseReceiptText = (text: string): ParsedItem[] => {
       // Extract the name by removing the price and suffix from the end
       let name = namePart.replace(priceRegex, '').trim()
         // Clean up common OCR noise like trailing dots, dashes, or colons right before price
-        .replace(/[\.\-\_\*\~:\s]+$/, '')
+        .replace(/[.\-_*~:\s]+$/, '')
         .trim();
 
       // If the line had quantity and total price (e.g., "2x 19.90 Kč 39.80 Kč A")
@@ -94,7 +94,7 @@ const parseReceiptText = (text: string): ParsedItem[] => {
       const nameLower = name.toLowerCase();
 
       // Check for discount line to merge into previous item
-      const isDiscountKeyword = nameLower.includes('sleva') || nameLower.includes('zdarma') || nameLower.includes('akce') || nameLower.includes('odpočet');
+      const isDiscountKeyword = nameLower.includes('sleva') || nameLower.includes('zdarma') || nameLower.includes('akce') || nameLower.includes('odpočet') || nameLower.includes('ušetříte');
       const isTotalDiscount = nameLower.includes('celková') || nameLower.includes('celkový');
 
       // If price is negative, OR it has a discount keyword (and isn't a summary discount)
@@ -121,7 +121,9 @@ const parseReceiptText = (text: string): ParsedItem[] => {
         nameLower.includes('prodej') ||
         nameLower.includes('dph') ||
         nameLower.includes('zaplacen') ||
-        nameLower.startsWith('z toho');
+        nameLower.startsWith('z toho') ||
+        nameLower === 'součet' ||
+        nameLower === 'cena czk';
 
       const isOnlyNumeric = /^[0-9.,\s%]+$/.test(name);
 
@@ -147,7 +149,12 @@ const parseReceiptText = (text: string): ParsedItem[] => {
          lowerTrimmed.includes('mastercard') ||
          lowerTrimmed.includes('visa') ||
          lowerTrimmed.includes('účtenka') ||
-         /^[\d\/\s:]+$/.test(lowerTrimmed); // dates and times
+         lowerTrimmed.includes('kaufland česká') ||
+         lowerTrimmed.includes('bělohorská') ||
+         lowerTrimmed.includes('adresa') ||
+         lowerTrimmed.includes('******') ||
+         lowerTrimmed.includes('cena czk') ||
+         /^[\d/\s:]+$/.test(lowerTrimmed); // dates and times
 
       if (!isJunkLine && trimmed.length > 2) {
          if (qtyMatch) {
