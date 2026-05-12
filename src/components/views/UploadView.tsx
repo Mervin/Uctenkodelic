@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { processImageOCR } from '../../services/ocrService';
-import { ImagePlus, Loader2, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowRight, Camera, FileUp } from 'lucide-react';
 import { convertPdfToImages } from '../../utils/pdfRenderer';
 
 export const UploadView: React.FC = () => {
@@ -10,6 +10,7 @@ export const UploadView: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -143,12 +144,20 @@ export const UploadView: React.FC = () => {
         <div className="w-full max-w-md flex flex-col items-center">
           <img src={session.imageUrl} alt="Účtenka" className="w-full max-h-[40vh] object-contain bg-gray-100 rounded-xl mb-6 shadow-sm" />
           <div className="flex flex-col gap-3 w-full mb-8">
-            <button
-               onClick={() => fileInputRef.current?.click()}
-               className="text-blue-600 font-medium bg-blue-50 py-3 rounded-xl transition-colors hover:bg-blue-100"
-            >
-              Vyfotit a přidat další část účtenky
-            </button>
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 text-blue-600 font-medium bg-blue-50 py-3 rounded-xl transition-colors hover:bg-blue-100 text-sm"
+              >
+                <Camera size={18} /> Vyfotit další
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 text-blue-600 font-medium bg-blue-50 py-3 rounded-xl transition-colors hover:bg-blue-100 text-sm"
+              >
+                <FileUp size={18} /> Nahrát další
+              </button>
+            </div>
             <button
                onClick={() => {
                  window.location.href = window.location.pathname;
@@ -160,13 +169,32 @@ export const UploadView: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full max-w-md aspect-[3/4] max-h-[40vh] bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors mb-8"
-        >
-          <ImagePlus size={48} className="text-gray-400 mb-4" />
-          <p className="text-gray-600 font-medium">Vyfotit nebo nahrát</p>
-          <p className="text-sm text-gray-400 mt-1">Podporováno: JPG, PNG</p>
+        <div className="w-full max-w-md flex flex-col gap-4 mb-8">
+          <button
+            onClick={() => cameraInputRef.current?.click()}
+            className="w-full aspect-[4/1] bg-blue-50 border-2 border-blue-200 rounded-2xl flex flex-row items-center justify-center gap-4 cursor-pointer hover:bg-blue-100 transition-colors"
+          >
+            <div className="bg-blue-100 p-3 rounded-full text-blue-600">
+              <Camera size={28} />
+            </div>
+            <div className="text-left">
+              <p className="text-blue-900 font-medium text-lg">Vyfotit účtenku</p>
+              <p className="text-sm text-blue-600">Použít fotoaparát</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full aspect-[4/1] bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl flex flex-row items-center justify-center gap-4 cursor-pointer hover:bg-gray-100 transition-colors"
+          >
+            <div className="bg-gray-200 p-3 rounded-full text-gray-500">
+              <FileUp size={28} />
+            </div>
+            <div className="text-left">
+              <p className="text-gray-700 font-medium text-lg">Nahrát ze souboru</p>
+              <p className="text-sm text-gray-500">Podporováno: JPG, PNG, PDF</p>
+            </div>
+          </button>
         </div>
       )}
 
@@ -175,6 +203,15 @@ export const UploadView: React.FC = () => {
         accept="image/*,application/pdf"
         className="hidden"
         ref={fileInputRef}
+        onChange={handleFileChange}
+      />
+
+      <input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        ref={cameraInputRef}
         onChange={handleFileChange}
       />
 
