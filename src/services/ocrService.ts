@@ -105,20 +105,6 @@ const parseReceiptText = (text: string): ParsedItem[] => {
       // We treat the item as quantity 1 since it's an indivisible package for splitting purposes.
       const nameLower = name.toLowerCase();
 
-      // Check for discount line to merge into previous item
-      const isDiscountKeyword = nameLower.includes('sleva') || nameLower.includes('zdarma') || nameLower.includes('akce') || nameLower.includes('odpočet') || nameLower.includes('ušetříte');
-      const isTotalDiscount = nameLower.includes('celková') || nameLower.includes('celkový');
-
-      // If price is negative, OR it has a discount keyword (and isn't a summary discount)
-      if ((price < 0 || isDiscountKeyword) && !isTotalDiscount) {
-        const discountAmount = Math.abs(price);
-        if (items.length > 0) {
-          // Subtract the discount from the previous item
-          items[items.length - 1].price = Math.round((items[items.length - 1].price - discountAmount) * 100) / 100;
-        }
-        continue;
-      }
-
       const isSummaryOrTotal = 
         nameLower.includes('cena po slev') ||
         nameLower.includes('celkem') ||
@@ -134,18 +120,42 @@ const parseReceiptText = (text: string): ParsedItem[] => {
         nameLower.includes('prodej') ||
         nameLower.includes('dph') ||
         nameLower.includes('daň') ||
+        nameLower.includes('dan') ||
         nameLower.includes('brutto') ||
         nameLower.includes('netto') ||
         nameLower.includes('c=%') ||
         nameLower.includes('f=%') ||
         nameLower.includes('zaplacen') ||
         nameLower.startsWith('z toho') ||
-        nameLower === 'součet' ||
+        nameLower.includes('součet') ||
+        nameLower.includes('soucet') ||
+        nameLower.includes('ušetříte') ||
         nameLower === 'cena czk';
+
+      if (isSummaryOrTotal) {
+        continue;
+      }
+
+      // Check for discount line to merge into previous item
+      const isDiscountKeyword = nameLower.includes('sleva') || nameLower.includes('zdarma') || nameLower.includes('akce') || nameLower.includes('odpočet');
+      const isTotalDiscount = nameLower.includes('celková') || nameLower.includes('celkový');
+
+      // If price is negative, OR it has a discount keyword (and isn't a summary discount)
+      if ((price < 0 || isDiscountKeyword) && !isTotalDiscount) {
+        const discountAmount = Math.abs(price);
+        if (items.length > 0 && items[items.length - 1].price >= discountAmount) {
+          // Subtract the discount from the previous item
+          items[items.length - 1].price = Math.round((items[items.length - 1].price - discountAmount) * 100) / 100;
+        } else if (items.length > 0) {
+          // Add as a separate item instead of breaking previous item with negative price
+          items.push({ name, price: -discountAmount });
+        }
+        continue;
+      }
 
       const isOnlyNumeric = /^[0-9.,\s%]+$/.test(name);
 
-      if (name.length > 2 && !isNaN(price) && !isSummaryOrTotal && !isOnlyNumeric) {
+      if (name.length > 2 && !isNaN(price) && !isOnlyNumeric) {
         // Check for duplicity to aggregate identical items
         const existingItem = items.find(
           item => item.name.toLowerCase() === nameLower && item.price === price
@@ -183,6 +193,9 @@ const parseReceiptText = (text: string): ParsedItem[] => {
          lowerTrimmed.includes('adresa') ||
          lowerTrimmed.includes('******') ||
          lowerTrimmed.includes('cena czk') ||
+         lowerTrimmed.includes('ušetříte') ||
+         lowerTrimmed.includes('daň') ||
+         lowerTrimmed.includes('dan') ||
          /^[\d/\s:]+$/.test(lowerTrimmed); // dates and times
 
       if (!isJunkLine && trimmed.length > 2) {
