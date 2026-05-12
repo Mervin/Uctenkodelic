@@ -99,11 +99,25 @@ export const UploadView: React.FC = () => {
         console.warn("Failed to store image in session, maybe too large", storeErr);
       }
 
-      const parsedItems = await processImageOCR(base64Url, (p) => setProgress(p));
-      await addItems(parsedItems.map(item => ({ ...item, assignments: {} })));
+      const result = await processImageOCR(base64Url, (p) => setProgress(p));
+      await addItems(result.items.map(item => ({ ...item, assignments: {} })));
+
+      let hasWarning = false;
+
+      // Compare total if present
+      if (result.ocrTotal !== undefined) {
+         const computedSum = result.items.reduce((acc, item) => acc + item.price, 0);
+         // Compare with a small epsilon for floating point errors
+         if (Math.abs(computedSum - result.ocrTotal) > 0.05) {
+             setError(`Upozornění: Součet položek (${computedSum.toFixed(2)} Kč) nesouhlasí s celkovou částkou na účtence (${result.ocrTotal.toFixed(2)} Kč). Pokračujte prosím tlačítkem níže a zkontrolujte položky.`);
+             hasWarning = true;
+         }
+      }
       
-      // Automaticky přesunout uživatele na krok 2 po úspěšném nahrání a zpracování
-      window.dispatchEvent(new CustomEvent('navigate', { detail: 'edit' }));
+      if (!hasWarning) {
+        // Automaticky přesunout uživatele na krok 2 po úspěšném nahrání a zpracování (a žádné chybě)
+        window.dispatchEvent(new CustomEvent('navigate', { detail: 'edit' }));
+      }
     } catch (err) {
       setError('Nepodařilo se přečíst text. Zkuste to prosím znovu nebo vložte položky ručně.');
       console.error(err);

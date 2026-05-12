@@ -6,10 +6,15 @@ export interface ParsedItem {
   quantity?: number;
 }
 
+export interface ParsedReceipt {
+  items: ParsedItem[];
+  ocrTotal?: number;
+}
+
 export const processImageOCR = async (
   imageUrl: string,
   onProgress?: (progress: number) => void
-): Promise<ParsedItem[]> => {
+): Promise<ParsedReceipt> => {
   try {
     const worker = await Tesseract.createWorker('ces', 1, {
       logger: m => {
@@ -34,9 +39,10 @@ export const processImageOCR = async (
  * Receipts generally have lines with "Item Name ... Price".
  * This is a best-effort parser.
  */
-const parseReceiptText = (text: string): ParsedItem[] => {
+export const parseReceiptText = (text: string): ParsedReceipt => {
   const lines = text.split('\n');
   const items: ParsedItem[] = [];
+  let ocrTotal: number | undefined = undefined;
 
   // Regex to find a price at the end of a line.
   // Matches e.g., "12.99", "12,99", "-12.99", "59,40 B", "67,60 C", "97.20 Kč"
@@ -125,6 +131,8 @@ const parseReceiptText = (text: string): ParsedItem[] => {
         nameLower.includes('netto') ||
         nameLower.includes('c=%') ||
         nameLower.includes('f=%') ||
+        nameLower.includes('f0%') ||
+        nameLower.includes('online') ||
         nameLower.includes('zaplacen') ||
         nameLower.startsWith('z toho') ||
         nameLower.includes('součet') ||
@@ -133,6 +141,15 @@ const parseReceiptText = (text: string): ParsedItem[] => {
         nameLower === 'cena czk';
 
       if (isSummaryOrTotal) {
+        pendingName = ''; // clear any pending name so it doesn't steal the price
+
+        // Extract total amount if it looks like the main total line
+        if ((nameLower.includes('součet') || nameLower.includes('soucet') || nameLower.includes('celkem')) && !isNaN(price)) {
+           // It's possible there are multiple (e.g., Celkem bez DPH vs Celkem), keep the maximum one
+           if (price > 0) {
+               ocrTotal = ocrTotal === undefined ? price : Math.max(ocrTotal, price);
+           }
+        }
         continue;
       }
 
@@ -196,6 +213,8 @@ const parseReceiptText = (text: string): ParsedItem[] => {
          lowerTrimmed.includes('ušetříte') ||
          lowerTrimmed.includes('daň') ||
          lowerTrimmed.includes('dan') ||
+         lowerTrimmed.includes('f0%') ||
+         lowerTrimmed.includes('online') ||
          /^[\d/\s:]+$/.test(lowerTrimmed); // dates and times
 
       if (!isJunkLine && trimmed.length > 2) {
@@ -212,5 +231,5 @@ const parseReceiptText = (text: string): ParsedItem[] => {
     }
   }
 
-  return items;
+  return { items, ocrTotal };
 };
