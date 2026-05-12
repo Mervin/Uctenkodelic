@@ -128,9 +128,20 @@ const parseReceiptText = (text: string): ParsedItem[] => {
       const isOnlyNumeric = /^[0-9.,\s%]+$/.test(name);
 
       if (name.length > 2 && !isNaN(price) && !isSummaryOrTotal && !isOnlyNumeric) {
-        const finalItem: ParsedItem = { name, price };
-        if (qty !== null) finalItem.quantity = qty;
-        items.push(finalItem);
+        // Check for duplicity to aggregate identical items
+        const existingItem = items.find(
+          item => item.name.toLowerCase() === nameLower && item.price === price
+        );
+
+        if (existingItem) {
+          // Increment quantity
+          const incrementQty = qty !== null ? qty : 1;
+          existingItem.quantity = (existingItem.quantity || 1) + incrementQty;
+        } else {
+          const finalItem: ParsedItem = { name, price };
+          if (qty !== null) finalItem.quantity = qty;
+          items.push(finalItem);
+        }
       } else if (qtyMatch && items.length > 0) {
         items[items.length - 1].quantity = qty as number;
       }
