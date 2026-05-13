@@ -253,7 +253,33 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
          lowerTrimmed.includes('online') ||
          /^[\d/\s:]+$/.test(lowerTrimmed); // dates and times
 
-      if (!isJunkLine && trimmed.length > 2) {
+      // If we see structural markers like IČO/DIČ, clear any preceding accumulated text
+      // because it is almost certainly store header information (store name, address)
+      const isStructuralHeaderMarker = /(?:^|\s)(ičo|dič|pič|ič)(?:\s|:|$)/.test(lowerTrimmed) ||
+                                       lowerTrimmed.includes('id provozovny') ||
+                                       lowerTrimmed.includes('s.r.o.') ||
+                                       lowerTrimmed.includes('a.s.');
+
+      // Also skip lines that are very common address patterns occurring *before* the first item
+      // We use á-ž to support Czech characters in street names
+      const isPreItemAddress = items.length === 0 && (
+          /\d{3}\s*\d{2}\s+[a-zA-Zá-žÁ-Ž]+/.test(trimmed) || // PSČ and City (e.g., 301 00 Plzeň)
+          /^[a-zA-Zá-žÁ-Ž\s-]+\s+\d+\/\d+/.test(trimmed) || // Street with numbers (e.g., Novodvorská 1062/12, Stavbařská 2959/2)
+          /^[a-zA-Zá-žÁ-Ž\s-]+\s+\d+,/.test(trimmed) || // Street with number and comma
+          /^č\.\s*\d+/.test(trimmed) // č. 91926
+      );
+
+      // If a line is just a common short OCR error before any items, skip it to prevent pollution
+      const isPreItemShortNoise = items.length === 0 && (
+          /^čiysk$/i.test(trimmed) ||
+          /^jysk$/i.test(trimmed)
+      );
+
+      if ((isStructuralHeaderMarker || isPreItemAddress || isPreItemShortNoise) && items.length === 0) {
+          pendingName = '';
+      }
+
+      if (!isJunkLine && !isStructuralHeaderMarker && !isPreItemAddress && !isPreItemShortNoise && trimmed.length > 2) {
          if (qtyMatch && !isWeightLine) {
             if (items.length > 0) {
                items[items.length - 1].quantity = qty as number;
