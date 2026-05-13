@@ -54,33 +54,33 @@ export const EditorView: React.FC = () => {
         {session?.items.map(item => (
           <div key={item.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-3">
             {editingId === item.id ? (
-              <div className="flex-1 flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 flex items-center gap-2">
+              <div className="flex-1 flex flex-col gap-3">
+                <input
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  className="w-full border-b border-gray-300 focus:border-blue-500 focus:outline-none py-1 text-lg font-medium"
+                  placeholder="Název"
+                />
+                <div className="flex items-center justify-between gap-2">
                   <input
                     value={editQuantity}
                     onChange={e => setEditQuantity(e.target.value)}
-                    className="w-12 border-b border-gray-300 focus:border-blue-500 focus:outline-none py-1 text-center"
+                    className="w-16 border-b border-gray-300 focus:border-blue-500 focus:outline-none py-1 text-center"
                     placeholder="ks"
                     type="number"
                     step="any"
                   />
-                  <input
-                    value={editName}
-                    onChange={e => setEditName(e.target.value)}
-                    className="flex-1 border-b border-gray-300 focus:border-blue-500 focus:outline-none py-1 min-w-0"
-                    placeholder="Název"
-                  />
-                </div>
-                <div className="flex items-center gap-2 justify-end">
-                  <input
-                    value={editPrice}
-                    onChange={e => setEditPrice(e.target.value)}
-                    className="w-20 border-b border-gray-300 focus:border-blue-500 focus:outline-none py-1 text-right"
-                    placeholder="Cena"
-                    type="number"
-                    step="0.01"
-                  />
-                  <button onClick={() => handleSave(item.id)} className="p-2 text-green-600 bg-green-50 rounded-lg shrink-0"><Check size={18} /></button>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={editPrice}
+                      onChange={e => setEditPrice(e.target.value)}
+                      className="w-24 border-b border-gray-300 focus:border-blue-500 focus:outline-none py-1 text-right font-medium"
+                      placeholder="Cena"
+                      type="number"
+                      step="0.01"
+                    />
+                    <button onClick={() => handleSave(item.id)} className="p-2 text-green-600 bg-green-50 rounded-lg shrink-0"><Check size={18} /></button>
+                  </div>
                 </div>
               </div>
             ) : (
