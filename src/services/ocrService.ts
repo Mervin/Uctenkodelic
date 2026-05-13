@@ -4,6 +4,7 @@ export interface ParsedItem {
   name: string;
   price: number;
   quantity?: number;
+  unitInfo?: string;
 }
 
 export interface ParsedReceipt {
@@ -50,9 +51,10 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
   // Allows optional letters/spaces after the price.
   const priceRegex = /(-?\d+[.,]\d{2})(?:\s*[a-zA-ZčČ\s]+)?$/;
 
-  // Regex to find a quantity at the start of a line.
+  // Regex to find a quantity, optionally preceded by a little noise.
   // Matches e.g., "6 ks x", "0,550 kg x", "2 x", "2x", "0,190 kg *"
-  const quantityRegex = /^(\d+(?:[.,]\d+)?)\s*(ks|kg|g|l|ml)?\s*(?:x|\*)/i;
+  // Adding \b or allowing optional start so noise like "n " works
+  const quantityRegex = /(?:^[a-zA-Z\s]*?|^\s*)(\d+(?:[.,]\d+)?)\s*(ks|kg|g|l|ml)?\s*(?:x|\*)/i;
 
   let pendingName = '';
 
@@ -63,6 +65,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
     const qtyMatch = trimmed.match(quantityRegex);
     let qty: number | null = null;
     let namePart = trimmed;
+    let unitInfoPart: string | undefined = undefined;
 
     let isWeightLine = false;
 
@@ -71,6 +74,26 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
 
       if (isWeight) {
         isWeightLine = true;
+        // e.g. "0,58kg x 129,90 Kč"
+        // Since there might be noise before it (like "n "), we just find the qtyMatch in the string and look ahead
+        const matchIdx = namePart.indexOf(qtyMatch[0]);
+        if (matchIdx !== -1) {
+             const restOfString = namePart.substring(matchIdx);
+             const unitPriceRegex = new RegExp(`^(${qtyMatch[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\d+[.,]\\d{2}\\s*(?:Kč|Kc|Eur|€|K\\?)?)`, 'i');
+             const unitPriceMatch = restOfString.match(unitPriceRegex);
+
+             if (unitPriceMatch) {
+                 // Remove any leading noise from the unit info so it's clean
+                 unitInfoPart = unitPriceMatch[1].replace(/^[a-zA-Z\s]+/, '').trim();
+                 namePart = namePart.substring(0, matchIdx) + restOfString.replace(unitPriceRegex, '').trim();
+             } else {
+                 unitInfoPart = qtyMatch[0].replace(/^[a-zA-Z\s]+/, '').trim();
+                 namePart = namePart.substring(0, matchIdx) + restOfString.replace(quantityRegex, '').trim();
+             }
+
+             // Clean up any small garbage left before the match (like the "n ")
+             namePart = namePart.replace(/^[a-zA-Z]\s+/, '').trim();
+        }
       } else {
         const qtyStr = qtyMatch[1].replace(',', '.');
         qty = parseFloat(qtyStr);
@@ -192,6 +215,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
         } else {
           const finalItem: ParsedItem = { name, price };
           if (qty !== null) finalItem.quantity = qty;
+          if (unitInfoPart) finalItem.unitInfo = unitInfoPart;
           items.push(finalItem);
         }
       } else if (qtyMatch && !isWeightLine && items.length > 0) {
