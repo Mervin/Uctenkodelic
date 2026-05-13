@@ -15,26 +15,36 @@ export const EditorView: React.FC = () => {
 
   const handleEdit = (item: any) => {
     setEditingId(item.id);
-    setEditName(item.name);
-    setEditPrice(item.price.toString());
-    setEditQuantity(item.quantity?.toString() || '');
+    setEditName(String(item.name ?? ''));
+    setEditPrice(String(item.price ?? ''));
+    setEditQuantity(item.quantity !== undefined && item.quantity !== null ? String(item.quantity) : '');
   };
 
   const handleSave = async (id: string) => {
-    const price = parseFloat(editPrice.replace(',', '.'));
-    const quantity = editQuantity.trim() ? parseFloat(editQuantity.replace(',', '.')) : undefined;
-    if (!isNaN(price) && editName.trim()) {
-      await updateItem(id, { name: editName.trim(), price, quantity });
+    const safePriceStr = String(editPrice || '').replace(/\s/g, '').replace(',', '.');
+    const safeQuantityStr = String(editQuantity || '').replace(/\s/g, '').replace(',', '.');
+    const safeNameStr = String(editName || '').trim();
+
+    const price = parseFloat(safePriceStr);
+    const quantity = safeQuantityStr ? parseFloat(safeQuantityStr) : undefined;
+
+    if (!isNaN(price) && safeNameStr) {
+      await updateItem(id, { name: safeNameStr, price, quantity });
     }
     setEditingId(null);
   };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    const price = parseFloat(newPrice.replace(',', '.'));
-    const quantity = newQuantity.trim() ? parseFloat(newQuantity.replace(',', '.')) : undefined;
-    if (!isNaN(price) && newName.trim()) {
-      await addItems([{ name: newName.trim(), price, quantity, assignments: {} }]);
+    const safePriceStr = String(newPrice || '').replace(/\s/g, '').replace(',', '.');
+    const safeQuantityStr = String(newQuantity || '').replace(/\s/g, '').replace(',', '.');
+    const safeNameStr = String(newName || '').trim();
+
+    const price = parseFloat(safePriceStr);
+    const quantity = safeQuantityStr ? parseFloat(safeQuantityStr) : undefined;
+
+    if (!isNaN(price) && safeNameStr) {
+      await addItems([{ name: safeNameStr, price, quantity, assignments: {} }]);
       setNewName('');
       setNewPrice('');
       setNewQuantity('');
@@ -67,8 +77,8 @@ export const EditorView: React.FC = () => {
                     onChange={e => setEditQuantity(e.target.value)}
                     className="w-16 border-b border-gray-300 focus:border-blue-500 focus:outline-none py-1 text-center"
                     placeholder="ks"
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                   />
                   <div className="flex items-center gap-2">
                     <input
@@ -76,8 +86,8 @@ export const EditorView: React.FC = () => {
                       onChange={e => setEditPrice(e.target.value)}
                       className="w-24 border-b border-gray-300 focus:border-blue-500 focus:outline-none py-1 text-right font-medium"
                       placeholder="Cena"
-                      type="number"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                     />
                     <button onClick={() => handleSave(item.id)} className="p-2 text-green-600 bg-green-50 rounded-lg shrink-0"><Check size={18} /></button>
                   </div>
@@ -118,8 +128,8 @@ export const EditorView: React.FC = () => {
           onChange={e => setNewQuantity(e.target.value)}
           className="w-16 rounded-lg border border-gray-300 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
           placeholder="ks"
-          type="number"
-          step="any"
+          type="text"
+          inputMode="decimal"
         />
         <input
           value={newName}
@@ -132,8 +142,8 @@ export const EditorView: React.FC = () => {
           onChange={e => setNewPrice(e.target.value)}
           className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-right"
           placeholder="Cena"
-          type="number"
-          step="0.01"
+          type="text"
+          inputMode="decimal"
         />
         <button type="submit" disabled={!newName.trim() || !newPrice.trim()} className="bg-blue-600 text-white p-2 rounded-lg disabled:opacity-50 flex items-center justify-center">
           <Plus size={20} />
