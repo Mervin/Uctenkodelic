@@ -48,8 +48,8 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
 
   // Regex to find a price at the end of a line.
   // Matches e.g., "12.99", "12,99", "-12.99", "59,40 B", "67,60 C", "97.20 Kč"
-  // Allows optional letters/spaces after the price.
-  const priceRegex = /(-?\d+[.,]\d{2})(?:\s*[a-zA-ZčČ\s]+)?$/;
+  // Allows optional non-digit OCR noise after the price, but avoids matching unit prices containing '/' (e.g. Kč/KS).
+  const priceRegex = /(-?\d+[.,]\d{2})(?:\s*(?!.*\/)[^\d]*(?:\d[^\d]*)?)?$/i;
 
   // Regex to find a quantity, optionally preceded by a little noise.
   // Matches e.g., "6 ks x", "0,550 kg x", "2 x", "2x", "0,190 kg *"
