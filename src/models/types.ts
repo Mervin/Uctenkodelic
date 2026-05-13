@@ -8,6 +8,7 @@ export interface ReceiptItem {
   name: string;
   price: number;
   quantity?: number;
+  unitInfo?: string;
   assignments: Record<string, number>;
 }
 
