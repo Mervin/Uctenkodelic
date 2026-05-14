@@ -3,7 +3,7 @@ import Tesseract from 'tesseract.js';
 export interface ParsedItem {
   name: string;
   price: number;
-  quantity?: number;
+  quantity: number;
   unitInfo?: string;
 }
 
@@ -195,7 +195,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
           items[items.length - 1].price = Math.round((items[items.length - 1].price - discountAmount) * 100) / 100;
         } else if (items.length > 0) {
           // Add as a separate item instead of breaking previous item with negative price
-          items.push({ name, price: -discountAmount });
+          items.push({ name, price: -discountAmount, quantity: 1 });
         }
         continue;
       }
@@ -211,10 +211,13 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
         if (existingItem) {
           // Increment quantity
           const incrementQty = qty !== null ? qty : 1;
-          existingItem.quantity = (existingItem.quantity || 1) + incrementQty;
+          existingItem.quantity = existingItem.quantity + incrementQty;
         } else {
-          const finalItem: ParsedItem = { name, price };
-          if (qty !== null) finalItem.quantity = qty;
+          const finalItem: ParsedItem = {
+            name,
+            price,
+            quantity: qty !== null ? qty : 1
+          };
           if (unitInfoPart) finalItem.unitInfo = unitInfoPart;
           items.push(finalItem);
         }

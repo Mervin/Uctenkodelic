@@ -126,9 +126,7 @@ export const SplitView: React.FC = () => {
                               if (!isNaN(parsed) && parsed > 0) {
                                 updateItem(item.id, { quantity: parsed });
                               } else if (q.trim() === '') {
-                                const newItem = { ...item };
-                                delete newItem.quantity;
-                                updateItem(item.id, newItem);
+                                updateItem(item.id, { quantity: 1 });
                               }
                             }
                           }}

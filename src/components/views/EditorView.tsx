@@ -26,7 +26,7 @@ export const EditorView: React.FC = () => {
     const safeNameStr = String(editName || '').trim();
 
     const price = parseFloat(safePriceStr);
-    const quantity = safeQuantityStr ? parseFloat(safeQuantityStr) : undefined;
+    const quantity = safeQuantityStr ? parseFloat(safeQuantityStr) : 1;
 
     if (!isNaN(price) && safeNameStr) {
       await updateItem(id, { name: safeNameStr, price, quantity });
@@ -41,7 +41,7 @@ export const EditorView: React.FC = () => {
     const safeNameStr = String(newName || '').trim();
 
     const price = parseFloat(safePriceStr);
-    const quantity = safeQuantityStr ? parseFloat(safeQuantityStr) : undefined;
+    const quantity = safeQuantityStr ? parseFloat(safeQuantityStr) : 1;
 
     if (!isNaN(price) && safeNameStr) {
       await addItems([{ name: safeNameStr, price, quantity, assignments: {} }]);
@@ -97,7 +97,7 @@ export const EditorView: React.FC = () => {
               <>
                 <div className="flex-1 min-w-0 flex flex-col">
                   <div className="flex items-center gap-2">
-                    {item.quantity && <span className="text-xs font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{item.quantity}x</span>}
+                    <span className="text-xs font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{item.quantity ?? 1}x</span>
                     <p className="font-medium text-gray-900 truncate">{item.name}</p>
                   </div>
                   {item.unitInfo && (
