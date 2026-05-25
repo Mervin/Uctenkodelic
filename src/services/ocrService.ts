@@ -54,9 +54,10 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
   // Regex to find a quantity, optionally preceded by a little noise.
   // Matches e.g., "6 ks x", "0,550 kg x", "2 x", "2x", "0,190 kg *", "20. 000 ks x"
   // Adding \b or allowing optional start so noise like "n " works
-  const quantityRegex = /(?:^[a-zA-Z\s]*?|^\s*)(\d+(?:[.,]\s*\d+)?)\s*(ks|kg|g|l|ml)?\s*(?:x|\*|xXx)/i;
+  const quantityRegex = /(?:^[a-zA-Z\s]*?|^\s*)(\d+(?:[.,]\s*\d+)?)\s*(?:(ks|kg|g|l|ml)\s*(?:x|\*|xXx)?|(?:ks|kg|g|l|ml)?\s*(?:x|\*|xXx))/i;
 
   let pendingName = '';
+  let pendingQty: number | null = null;
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -211,19 +212,21 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
 
         if (existingItem) {
           // Increment quantity
-          const incrementQty = qty !== null ? qty : 1;
+          const incrementQty = qty !== null ? qty : (pendingQty !== null ? pendingQty : 1);
           existingItem.quantity = existingItem.quantity + incrementQty;
+          pendingQty = null;
         } else {
           const finalItem: ParsedItem = {
             name,
             price,
-            quantity: qty !== null ? qty : 1
+            quantity: qty !== null ? qty : (pendingQty !== null ? pendingQty : 1)
           };
           if (unitInfoPart) finalItem.unitInfo = unitInfoPart;
           items.push(finalItem);
+          pendingQty = null;
         }
-      } else if (qtyMatch && !isWeightLine && items.length > 0) {
-        items[items.length - 1].quantity = qty as number;
+      } else if (qtyMatch && !isWeightLine) {
+        pendingQty = qty as number;
       }
     } else {
       const lowerTrimmed = trimmed.toLowerCase();
@@ -262,7 +265,10 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
       const isStructuralHeaderMarker = /(?:^|\s)(ičo|dič|pič|ič)(?:\s|:|$)/.test(lowerTrimmed) ||
                                        lowerTrimmed.includes('id provozovny') ||
                                        lowerTrimmed.includes('s.r.o.') ||
-                                       lowerTrimmed.includes('a.s.');
+                                       lowerTrimmed.includes('a.s.') ||
+                                       lowerTrimmed.includes('městs') ||
+                                       lowerTrimmed.includes('městský soud') ||
+                                       lowerTrimmed.includes('soud praha');
 
       // Also skip lines that are very common address patterns occurring *before* the first item
       // We use á-ž to support Czech characters in street names
@@ -285,9 +291,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
 
       if (!isJunkLine && !isStructuralHeaderMarker && !isPreItemAddress && !isPreItemShortNoise && trimmed.length > 2) {
          if (qtyMatch && !isWeightLine) {
-            if (items.length > 0) {
-               items[items.length - 1].quantity = qty as number;
-            }
+            pendingQty = qty as number;
          } else {
             pendingName = pendingName ? pendingName + ' ' + trimmed : trimmed;
          }
