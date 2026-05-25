@@ -47,14 +47,14 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
   let isItemParsingComplete = false;
 
   // Regex to find a price at the end of a line.
-  // Matches e.g., "12.99", "12,99", "-12.99", "59,40 B", "67,60 C", "97.20 Kč"
+  // Matches e.g., "12.99", "12,99", "-12.99", "59,40 B", "67,60 C", "97.20 Kč", "89. 90"
   // Allows optional non-digit OCR noise after the price, but avoids matching unit prices containing '/' (e.g. Kč/KS).
-  const priceRegex = /(-?\d+[.,]\d{2})(?:\s*(?!.*\/)[^\d]*(?:\d[^\d]*)?)?$/i;
+  const priceRegex = /(-?\d+[.,]\s*\d{2})(?:\s*(?!.*\/)[^\d]*(?:\d[^\d]*)?)?$/i;
 
   // Regex to find a quantity, optionally preceded by a little noise.
-  // Matches e.g., "6 ks x", "0,550 kg x", "2 x", "2x", "0,190 kg *"
+  // Matches e.g., "6 ks x", "0,550 kg x", "2 x", "2x", "0,190 kg *", "20. 000 ks x"
   // Adding \b or allowing optional start so noise like "n " works
-  const quantityRegex = /(?:^[a-zA-Z\s]*?|^\s*)(\d+(?:[.,]\d+)?)\s*(ks|kg|g|l|ml)?\s*(?:x|\*)/i;
+  const quantityRegex = /(?:^[a-zA-Z\s]*?|^\s*)(\d+(?:[.,]\s*\d+)?)\s*(ks|kg|g|l|ml)?\s*(?:x|\*|xXx)/i;
 
   let pendingName = '';
 
@@ -79,7 +79,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
         const matchIdx = namePart.indexOf(qtyMatch[0]);
         if (matchIdx !== -1) {
              const restOfString = namePart.substring(matchIdx);
-             const unitPriceRegex = new RegExp(`^(${qtyMatch[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\d+[.,]\\d{2}\\s*(?:Kč|Kc|Eur|€|K\\?)?)`, 'i');
+             const unitPriceRegex = new RegExp(`^(${qtyMatch[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\d+[.,]\\s*\\d{2}\\s*(?:Kč|Kc|Eur|€|K\\?)?)`, 'i');
              const unitPriceMatch = restOfString.match(unitPriceRegex);
 
              if (unitPriceMatch) {
@@ -95,7 +95,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
              namePart = namePart.replace(/^[a-zA-Z]\s+/, '').trim();
         }
       } else {
-        const qtyStr = qtyMatch[1].replace(',', '.');
+        const qtyStr = qtyMatch[1].replace(',', '.').replace(/\s/g, '');
         qty = parseFloat(qtyStr);
         namePart = namePart.replace(quantityRegex, '').trim();
       }
@@ -103,7 +103,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
 
     const match = namePart.match(priceRegex);
     if (match) {
-      const priceStr = match[1].replace(',', '.'); // standardize decimal
+      const priceStr = match[1].replace(',', '.').replace(/\s/g, ''); // standardize decimal and remove spaces
       const price = parseFloat(priceStr);
 
       // Extract the name by removing the price and suffix from the end
@@ -115,7 +115,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
       // If the line had quantity and total price (e.g., "2x 19.90 Kč 39.80 Kč A")
       // We should strip the unit price as well.
       if (!isWeightLine) {
-         name = name.replace(/\d+[.,]\d{2}\s*(?:Kč|Kc|Eur|€|K\?)?(?:\s*\/\s*(?:kg|ks|g|l|ml))?/i, '').trim();
+         name = name.replace(/\d+[.,]\s*\d{2}\s*(?:Kč|Kc|Eur|€|K\?)?(?:\s*\/\s*(?:kg|ks|g|l|ml))?/i, '').trim();
       }
 
       // Clean up random slash / kg remnants
