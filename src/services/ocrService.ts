@@ -161,6 +161,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
         nameLower.startsWith('z toho') ||
         nameLower.includes('součet') ||
         nameLower.includes('soucet') ||
+        nameLower.includes('celken') ||
         nameLower.includes('ušetříte') ||
         nameLower === 'cena czk';
 
@@ -168,7 +169,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
         pendingName = ''; // clear any pending name so it doesn't steal the price
 
         // Extract total amount if it looks like the main total line
-        if ((nameLower.includes('součet') || nameLower.includes('soucet') || nameLower.includes('celkem')) && !isNaN(price)) {
+        if ((nameLower.includes('součet') || nameLower.includes('soucet') || nameLower.includes('celkem') || nameLower.includes('celken')) && !isNaN(price)) {
            // It's possible there are multiple (e.g., Celkem bez DPH vs Celkem), keep the maximum one
            if (price > 0) {
                ocrTotal = ocrTotal === undefined ? price : Math.max(ocrTotal, price);
