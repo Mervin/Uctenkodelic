@@ -258,6 +258,7 @@ export const parseReceiptText = (text: string): ParsedReceipt => {
          lowerTrimmed.includes('dan') ||
          lowerTrimmed.includes('f0%') ||
          lowerTrimmed.includes('online') ||
+         lowerTrimmed.startsWith('datum') ||
          /^[\d/\s:]+$/.test(lowerTrimmed); // dates and times
 
       // If we see structural markers like IČO/DIČ, clear any preceding accumulated text
