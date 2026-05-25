@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/appStore';
 import { processImageOCR } from '../../services/ocrService';
 import { Loader2, ArrowRight, Camera, FileUp } from 'lucide-react';
 import { convertPdfToImages } from '../../utils/pdfRenderer';
+import imageCompression from 'browser-image-compression';
 
 export const UploadView: React.FC = () => {
   const { session, updateImage, addItems } = useAppStore();
@@ -11,48 +12,6 @@ export const UploadView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-
-  const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-
-          // Bezpečnostní limity pro plátno (Canvas) na mobilních zařízeních (iOS má limit kolem 4096px).
-          // Příliš vysoké obrázky z aplikací (Lidl) musíme zmenšit na max výšku, jinak spadnou.
-          // Běžné fotky musíme omezit i plošně, aby base64 nezahlstil localStorage.
-          const MAX_HEIGHT = 4000;
-          const MAX_WIDTH = 2000;
-
-          if (height > MAX_HEIGHT) {
-            width = Math.round((width * MAX_HEIGHT) / height);
-            height = MAX_HEIGHT;
-          }
-          
-          if (width > MAX_WIDTH) {
-            height = Math.round((height * MAX_WIDTH) / width);
-            width = MAX_WIDTH;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) return resolve(e.target?.result as string);
-          
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.6));
-        };
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = e.target?.result as string;
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
-  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -78,19 +37,23 @@ export const UploadView: React.FC = () => {
           URL.revokeObjectURL(objectUrl);
         }
       } else {
-        // Běžná fotka z foťáku mobilu má 5-10 MB, což by shodilo localStorage (limit 5MB) a zaseklo OCR.
-        // Digitální účtenky (Lidl) mají často kolem 1MB, jsou extrémně vysoké a nepotřebují (ani nesmí)
-        // jít přes zmenšování (Canvas), jinak na starších mobilech narazí na limity výšky plátna.
-        if (file.size > 3 * 1024 * 1024) { // Nad 3 MB zmenšíme
-          base64Url = await compressImage(file);
-        } else { // Pod 3 MB rovnou načteme původní (to je to, co fungovalo v původní verzi!)
-          base64Url = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (event) => resolve(event.target?.result as string);
-            reader.onerror = () => reject(new Error('Failed to read file'));
-            reader.readAsDataURL(file);
-          });
-        }
+        // Používáme browser-image-compression
+        // Automaticky aplikuje EXIF rotaci, omezí velikost na 3 MB, a zajistí, že šířka nebo výška nepřesáhnou limit.
+        const options = {
+          maxSizeMB: 3,
+          maxWidthOrHeight: 4000,
+          useWebWorker: true
+          // exifOrientation is handled automatically by default in browser-image-compression v2+
+        };
+
+        const compressedFile = await imageCompression(file, options);
+
+        base64Url = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => resolve(event.target?.result as string);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(compressedFile);
+        });
       }
       
       try {
